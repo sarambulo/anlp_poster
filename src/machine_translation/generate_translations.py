@@ -20,7 +20,7 @@ def generate_translations(model_checkpoint: str, texts: List[str]) -> List[str]:
     translations = []
     for rows in pipe(KeyDataset(dataset, "es"), batch_size=16):
         translations.extend([row['translation_text'].strip() for row in rows])
-
+    return translations
 
 if __name__ == "__main__":
     import argparse
