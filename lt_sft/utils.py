@@ -12,6 +12,25 @@ def get_mask(pretrained_model = "", finetuned_model = "", K = 10000):
     state_fi = model_es_fi.state_dict()
     state_quz = model_es_quz.state_dict()
 
+    # Sanity check
+    if state_fi.keys() != state_quz.keys():
+        missing_in_fi = state_quz.keys() - state_fi.keys()
+        missing_in_quz = state_fi.keys() - state_quz.keys()
+        raise ValueError(
+            f"State dict key mismatch:\n"
+            f"  Missing in Spanish–Finnish: {missing_in_fi}\n"
+            f"  Missing in Spanish–Quechua: {missing_in_quz}"
+        )
+
+    # Sanity check
+    for name in state_fi:
+        if state_fi[name].shape != state_quz[name].shape:
+            raise ValueError(
+                f"Shape mismatch for parameter '{name}':\n"
+                f"  Spanish–Finnish shape: {state_fi[name].shape}\n"
+                f"  Spanish–Quechua shape: {state_quz[name].shape}"
+            )
+
     # 3. Compute the absolute differences for each parameter
     diffs = {name: (state_quz[name] - state_fi[name]).abs() for name in state_fi if name in state_quz}
 
