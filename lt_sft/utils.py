@@ -1,7 +1,7 @@
 import torch
 from transformers import AutoModelForSeq2SeqLM
 
-def get_mask(pretrained_model = "", finetuned_model = "", K = 10000):
+def get_mask(pretrained_model = "Helsinki-NLP/opus-mt-es-fi", finetuned_model = "americasnlp-lct-ehu/es_fi_quz", K = 10000):
     # 1a. Load the pre-trained Spanish-Finnish model
     model_es_fi = AutoModelForSeq2SeqLM.from_pretrained("Helsinki-NLP/opus-mt-es-fi")
 
