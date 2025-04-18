@@ -156,7 +156,7 @@ class MT_Model:
             push_to_hub=self.push_to_hub,
             is_multilingual=self.is_multilingual,
         )
-        self.trainer = self.get_trainer(type=('lt-sft' if self.lt_sft else 'default'))
+        self.trainer = self.get_trainer()
         self.trainer.train()
 
         if self.push_to_hub:

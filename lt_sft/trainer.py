@@ -6,7 +6,7 @@ from transformers.utils import is_sagemaker_mp_enabled
 # from transformers.trainer_pt_utils import smp_forward_backward
 
 class LTSFTSeq2SeqTrainer(Seq2SeqTrainer):
-    def __init__(self, *args, device='cuda' if torch.cuda.is_available() else 'cpu', param_masks: Optional[Dict[str, torch.Tensor]] = None, **kwargs):
+    def __init__(self, *args, device: str = None, param_masks: Optional[Dict[str, torch.Tensor]] = None, **kwargs):
         """
         Initializes the ElementWiseFreezeSeq2SeqTrainer.
 
