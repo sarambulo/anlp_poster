@@ -8,8 +8,8 @@ from transformers import (AutoModelForSeq2SeqLM, AutoTokenizer,
                           DataCollatorForSeq2Seq, EarlyStoppingCallback,
                           Seq2SeqTrainer)
 
-import helper_funcs as f
-from trainer import LTSFTSeq2SeqTrainer
+import src.machine_translation.helper_funcs as f
+from lt_sft.trainer import LTSFTSeq2SeqTrainer
 
 
 class MT_Model:
@@ -24,7 +24,7 @@ class MT_Model:
         push_to_hub: bool = False,
         metric: str = "chrf",
         with_dups: bool = False,
-        lt_sft: bool = True,
+        lt_sft_mask: dict = None,
     ):
         self.checkpoint = checkpoint
         self.out_model_name = out_model_name
@@ -35,7 +35,7 @@ class MT_Model:
         self.is_prompt = is_prompt
         self.push_to_hub = push_to_hub
         self.metric = metric
-        self.lt_sft = lt_sft
+        self.lt_sft_mask = lt_sft_mask
 
         datasets = f.load_dataset(is_multilingual, self.que_data_codes, with_dups)
         self.load_pretrained_tokenizer()
@@ -111,15 +111,16 @@ class MT_Model:
         result = {k: round(v, 4) for k, v in result.items()}
         return result
 
-    def get_trainer(self, type: Literal['default', 'lt-sft'] = 'default') -> Seq2SeqTrainer:
+    def get_trainer(self) -> Seq2SeqTrainer:
         """Returns a trainer using the loaded dataset and model
 
         Returns:
             Seq2SeqTrainer: The trainer
         """
-        if type == 'lt-sft':
+        if self.lt_sft_mask:
             return LTSFTSeq2SeqTrainer(
                 model=self.model,
+                param_masks=self.lt_sft_mask,
                 callbacks=[EarlyStoppingCallback(early_stopping_patience=5)],
                 args=self.training_args,
                 train_dataset=self.tokenized_dataset["train"],
@@ -156,36 +157,3 @@ class MT_Model:
             self.trainer.push_to_hub(self.out_model_name)
 
 
-def get_argument_parser():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--checkpoint", type=str, required=True, help="Name of model checkpoint to load from HuggingFace")
-    parser.add_argument("--out_model_name", type=str, required=True, help="Output Model Name")
-    parser.add_argument("--metric", type=str, required=False, default="chrf", help="Metric to choose the best model on (Default: 'chrf') (Other: 'bleu')")
-    parser.add_argument("--epochs", type=int, required=False, default=10, help="Number of epochs to train the model for (Default: 10)")
-    parser.add_argument("--is_prompt", default=False, action=argparse.BooleanOptionalAction, help="Some models require a checkpoint (Default: False)")
-    parser.add_argument("--extra_data_codes", nargs="*", type=str, default=[], help="Extra data to load for quechua (Default: []) (Options: 'quy', 'quz', 'que', 'bcktr', 'copied')")
-    parser.add_argument("--is_multilingual", default=False, action=argparse.BooleanOptionalAction, help='Whether to train a multilingual model or just on Quechua (Default: False)')
-    parser.add_argument("--with_dups", default=False, action=argparse.BooleanOptionalAction, help="Whether to include duplicate data but different dialect for Quechua (Default: False)")
-    parser.add_argument("--push_to_hub", default=False, action=argparse.BooleanOptionalAction, help="Whether to push the model to the hub or not (Default: False)")
-    parser.add_argument("--lt-sft", default=False, action=argparse.BooleanOptionalAction, help="Whether to use LT-SFT (Default: False)")
-
-    return parser
-
-if __name__ == "__main__":
-
-    parser = get_argument_parser()
-    args = parser.parse_args()
-
-    mt_model = MT_Model(
-        checkpoint=args.checkpoint,
-        out_model_name=args.out_model_name,
-        que_data_codes=args.extra_data_codes,
-        is_multilingual=args.is_multilingual,
-        epochs=args.epochs,
-        is_prompt=args.is_prompt,
-        metric=args.metric,
-        push_to_hub=args.push_to_hub,
-        with_dups=args.with_dups,
-        lt_sft=args.lt_sft,
-    )
-    mt_model.train()

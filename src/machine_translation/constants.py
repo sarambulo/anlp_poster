@@ -1,4 +1,4 @@
-MAIN_FOLDER_PATH = "./../../data/parallel-data/"
+MAIN_FOLDER_PATH = "data/parallel-data/"
 DATA_CODES = {
     "ashaninka": "cni",
     "aymara": "aym",

@@ -4,7 +4,7 @@ from typing import Any, Dict, Iterable, List, Tuple
 from datasets import Dataset, DatasetDict
 from transformers import PreTrainedTokenizer, Seq2SeqTrainingArguments
 
-from constants import (DATA_CODES, QUECHUA_DATA_PATHS, QUECHUA_DUPLICATES,
+from src.machine_translation.constants import (DATA_CODES, QUECHUA_DATA_PATHS, QUECHUA_DUPLICATES,
                        SRC_LANG, SRC_LANG_CODE, MAIN_FOLDER_PATH)
 
 

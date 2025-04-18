@@ -3,10 +3,10 @@ from transformers import AutoModelForSeq2SeqLM
 
 def get_mask(pretrained_model = "Helsinki-NLP/opus-mt-es-fi", finetuned_model = "americasnlp-lct-ehu/es_fi_quz", K = 10000):
     # 1a. Load the pre-trained Spanish-Finnish model
-    model_es_fi = AutoModelForSeq2SeqLM.from_pretrained("Helsinki-NLP/opus-mt-es-fi")
+    model_es_fi = AutoModelForSeq2SeqLM.from_pretrained(pretrained_model)
 
     # 1b. Load the pre-trained Spanish-Finnish model
-    model_es_quz = AutoModelForSeq2SeqLM.from_pretrained("americasnlp-lct-ehu/es_fi_quz")
+    model_es_quz = AutoModelForSeq2SeqLM.from_pretrained(finetuned_model)
 
     # 2. Extract their state dictionaries
     state_fi = model_es_fi.state_dict()
@@ -38,7 +38,6 @@ def get_mask(pretrained_model = "Helsinki-NLP/opus-mt-es-fi", finetuned_model = 
     all_diffs = torch.cat([tensor.view(-1) for tensor in diffs.values()])
 
     # 5. Identify the top K parameters (by absolute change)
-    K = 10000  # set your desired K
     topk_vals, topk_idxs = torch.topk(all_diffs, K)
 
     # 6. Create a binary mask μ for each parameter tensor
