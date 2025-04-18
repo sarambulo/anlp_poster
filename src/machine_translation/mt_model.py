@@ -24,6 +24,7 @@ class MT_Model:
         push_to_hub: bool = False,
         metric: str = "chrf",
         with_dups: bool = False,
+        lt_sft: bool = True,
     ):
         self.checkpoint = checkpoint
         self.out_model_name = out_model_name
@@ -34,6 +35,7 @@ class MT_Model:
         self.is_prompt = is_prompt
         self.push_to_hub = push_to_hub
         self.metric = metric
+        self.lt_sft = lt_sft
 
         datasets = f.load_dataset(is_multilingual, self.que_data_codes, with_dups)
         self.load_pretrained_tokenizer()
@@ -165,6 +167,7 @@ def get_argument_parser():
     parser.add_argument("--is_multilingual", default=False, action=argparse.BooleanOptionalAction, help='Whether to train a multilingual model or just on Quechua (Default: False)')
     parser.add_argument("--with_dups", default=False, action=argparse.BooleanOptionalAction, help="Whether to include duplicate data but different dialect for Quechua (Default: False)")
     parser.add_argument("--push_to_hub", default=False, action=argparse.BooleanOptionalAction, help="Whether to push the model to the hub or not (Default: False)")
+    parser.add_argument("--lt-sft", default=False, action=argparse.BooleanOptionalAction, help="Whether to use LT-SFT (Default: False)")
 
     return parser
 
@@ -183,5 +186,6 @@ if __name__ == "__main__":
         metric=args.metric,
         push_to_hub=args.push_to_hub,
         with_dups=args.with_dups,
+        lt_sft=args.lt_sft,
     )
     mt_model.train()
