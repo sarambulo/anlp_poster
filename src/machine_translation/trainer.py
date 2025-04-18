@@ -3,7 +3,7 @@ from transformers import Seq2SeqTrainer, Seq2SeqTrainingArguments
 from typing import Dict, Optional, Tuple, Union, Any
 from torch import nn
 from transformers.utils import is_sagemaker_mp_enabled
-from transformers.trainer_pt_utils import smp_forward_backward
+# from transformers.trainer_pt_utils import smp_forward_backward
 
 class LTSFTSeq2SeqTrainer(Seq2SeqTrainer):
     def __init__(self, *args, device: str, param_masks: Optional[Dict[str, torch.Tensor]] = None, **kwargs):
@@ -48,8 +48,9 @@ class LTSFTSeq2SeqTrainer(Seq2SeqTrainer):
         inputs = self._prepare_inputs(inputs)
 
         if is_sagemaker_mp_enabled():
-            loss_mb = smp_forward_backward(model, inputs, self.args.gradient_accumulation_steps)
-            return loss_mb.reduce_mean().detach().to(self.args.device)
+            raise ValueError("We do not have smp_forward_backward")
+            # loss_mb = smp_forward_backward(model, inputs, self.args.gradient_accumulation_steps)
+            # return loss_mb.reduce_mean().detach().to(self.args.device)
 
         with self.compute_loss_context_manager():
             loss = self.compute_loss(model, inputs)

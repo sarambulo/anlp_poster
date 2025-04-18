@@ -1,5 +1,5 @@
 import argparse
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple, Literal
 
 import numpy as np
 import sacrebleu
@@ -9,6 +9,7 @@ from transformers import (AutoModelForSeq2SeqLM, AutoTokenizer,
                           Seq2SeqTrainer)
 
 import helper_funcs as f
+from trainer import LTSFTSeq2SeqTrainer
 
 
 class MT_Model:
@@ -108,22 +109,34 @@ class MT_Model:
         result = {k: round(v, 4) for k, v in result.items()}
         return result
 
-    def get_trainer(self) -> Seq2SeqTrainer:
+    def get_trainer(self, type: Literal['default', 'lt-sft'] = 'default') -> Seq2SeqTrainer:
         """Returns a trainer using the loaded dataset and model
 
         Returns:
             Seq2SeqTrainer: The trainer
         """
-        return Seq2SeqTrainer(
-            model=self.model,
-            callbacks=[EarlyStoppingCallback(early_stopping_patience=5)],
-            args=self.training_args,
-            train_dataset=self.tokenized_dataset["train"],
-            eval_dataset=self.tokenized_dataset["dev"],
-            tokenizer=self.tokenizer,
-            data_collator=self.data_collator,
-            compute_metrics=self.compute_metrics,
-        )
+        if type == 'lt-sft':
+            return LTSFTSeq2SeqTrainer(
+                model=self.model,
+                callbacks=[EarlyStoppingCallback(early_stopping_patience=5)],
+                args=self.training_args,
+                train_dataset=self.tokenized_dataset["train"],
+                eval_dataset=self.tokenized_dataset["dev"],
+                tokenizer=self.tokenizer,
+                data_collator=self.data_collator,
+                compute_metrics=self.compute_metrics,
+            ) 
+        else:
+            return Seq2SeqTrainer(
+                model=self.model,
+                callbacks=[EarlyStoppingCallback(early_stopping_patience=5)],
+                args=self.training_args,
+                train_dataset=self.tokenized_dataset["train"],
+                eval_dataset=self.tokenized_dataset["dev"],
+                tokenizer=self.tokenizer,
+                data_collator=self.data_collator,
+                compute_metrics=self.compute_metrics,
+            )
 
     def train(self):
         """Load the training arguments and start the training"""
