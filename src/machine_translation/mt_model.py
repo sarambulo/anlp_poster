@@ -83,6 +83,12 @@ class MT_Model:
             }
         )
 
+        # self.tokenized_dataset = DatasetDict({
+        #     split: ds.shuffle(seed=42)
+        #                 .select(range(max(1, int(len(ds) * 0.01))))
+        #     for split, ds in self.tokenized_dataset.items()
+        # })
+
     def compute_metrics(self, eval_preds: Tuple[Iterable[int], Iterable[int]]) -> Dict[str, float]:
         """Compute metrics while training the model
 
@@ -150,7 +156,7 @@ class MT_Model:
             push_to_hub=self.push_to_hub,
             is_multilingual=self.is_multilingual,
         )
-        self.trainer = self.get_trainer()
+        self.trainer = self.get_trainer(type=('lt-sft' if self.lt_sft else 'default'))
         self.trainer.train()
 
         if self.push_to_hub:
