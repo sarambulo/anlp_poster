@@ -1,12 +1,15 @@
 import torch
 from transformers import AutoModelForSeq2SeqLM
 
-def get_mask(pretrained_model = "Helsinki-NLP/opus-mt-es-fi", finetuned_model = "americasnlp-lct-ehu/es_fi_quz", K = 10000):
+def get_mask(pretrained_model = "Helsinki-NLP/opus-mt-es-fi", finetuned_model = "americasnlp-lct-ehu/es_fi_quz", K_pct=1):
     # 1a. Load the pre-trained Spanish-Finnish model
     model_es_fi = AutoModelForSeq2SeqLM.from_pretrained(pretrained_model)
 
     # 1b. Load the pre-trained Spanish-Finnish model
     model_es_quz = AutoModelForSeq2SeqLM.from_pretrained(finetuned_model)
+
+    total_params = sum(p.numel() for p in model_es_fi.parameters() if p.requires_grad)
+    K = int(total_params * K_pct)
 
     # 2. Extract their state dictionaries
     state_fi = model_es_fi.state_dict()
