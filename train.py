@@ -14,6 +14,7 @@ def get_argument_parser():
     parser.add_argument("--with_dups", default=False, action=argparse.BooleanOptionalAction, help="Whether to include duplicate data but different dialect for Quechua (Default: False)")
     parser.add_argument("--push_to_hub", default=False, action=argparse.BooleanOptionalAction, help="Whether to push the model to the hub or not (Default: False)")
     parser.add_argument("--lt-sft", default=False, action=argparse.BooleanOptionalAction, help="Whether to use LT-SFT (Default: False)")
+    parser.add_argument("--K", type=float, required=False, default=1, help="When using LT-SFT, K=proportion of parameters to leave unmasked (Default: 1)")
 
     return parser
 
@@ -24,7 +25,7 @@ if __name__ == "__main__":
 
     lt_sft_mask = None
     if args.lt_sft:
-        lt_sft_mask = get_mask()
+        lt_sft_mask = get_mask(K_pct=args.K)
 
     mt_model = MT_Model(
         checkpoint=args.checkpoint,
