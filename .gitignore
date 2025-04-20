@@ -1,5 +1,6 @@
-# New repo
-src/machine_translation/es_fi_quz
+# Models
+es_fi_quz
+k*/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
