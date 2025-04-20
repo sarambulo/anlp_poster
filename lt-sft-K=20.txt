@@ -1,0 +1,34 @@
+Data read from original/jw300_quy | Count: 125008 | 125008
+Data read from original/dict_misc_quy | Count: 9000 | 9000
+Data read from original/minedu_quy | Count: 643 | 643
+Data read from extra/bible_quy | Count: 34831 | 34831
+Data read from extra/bol_const_quy | Count: 2194 | 2194
+Data read from extra/per_const_quy | Count: 1277 | 1277
+Data read from extra/lexicon_quy | Count: 6161 | 6161
+Data read from extra/handbook_quy | Count: 2297 | 2298
+Data read from extra/web_misc_quy | Count: 985 | 985
+Data read from extra/tatoeba_quy | Count: 163 | 163
+Data read from extra/reglamento_quz | Count: 287 | 287
+Data read from extra/cosude_quz | Count: 529 | 529
+Data read from extra/dw_quz | Count: 856 | 856
+Data read from extra/fundacion_quz | Count: 440 | 440
+Lang: Quechua | Train Count: 184671 | Dev Count: 996
+{'loss': 7.7752, 'learning_rate': 1.9955346650998824e-05, 'epoch': 0.05}
+{'loss': 4.0131, 'learning_rate': 1.9910150953629216e-05, 'epoch': 0.09}
+{'eval_loss': 2.972236156463623, 'eval_bleu': 0.9308, 'eval_chrf': 11.814, 'eval_gen_len': 13.1288, 'eval_runtime': 27.1296, 'eval_samples_per_second': 36.639, 'eval_steps_per_second': 2.322, 'epoch': 0.09}
+{'loss': 1.8296, 'learning_rate': 1.9864955256259607e-05, 'epoch': 0.14}
+{'loss': 1.4118, 'learning_rate': 1.9819759558889995e-05, 'epoch': 0.18}
+{'eval_loss': 1.188040852546692, 'eval_bleu': 0.8685, 'eval_chrf': 11.6846, 'eval_gen_len': 14.3099, 'eval_runtime': 38.8496, 'eval_samples_per_second': 25.586, 'eval_steps_per_second': 1.622, 'epoch': 0.18}
+{'loss': 1.3396, 'learning_rate': 1.9774563861520383e-05, 'epoch': 0.23}
+{'loss': 1.2492, 'learning_rate': 1.9729368164150774e-05, 'epoch': 0.27}
+{'eval_loss': 1.093207597732544, 'eval_bleu': 0.8148, 'eval_chrf': 11.4806, 'eval_gen_len': 15.8551, 'eval_runtime': 56.9071, 'eval_samples_per_second': 17.467, 'eval_steps_per_second': 1.107, 'epoch': 0.27}
+{'loss': 1.2149, 'learning_rate': 1.9684172466781165e-05, 'epoch': 0.32}
+{'loss': 1.1864, 'learning_rate': 1.9638976769411553e-05, 'epoch': 0.36}
+{'eval_loss': 1.0425832271575928, 'eval_bleu': 0.7206, 'eval_chrf': 11.2905, 'eval_gen_len': 17.1519, 'eval_runtime': 62.425, 'eval_samples_per_second': 15.923, 'eval_steps_per_second': 1.009, 'epoch': 0.36}
+{'loss': 1.1633, 'learning_rate': 1.9593781072041945e-05, 'epoch': 0.41}
+{'loss': 1.1433, 'learning_rate': 1.9548585374672332e-05, 'epoch': 0.45}
+{'eval_loss': 1.007710337638855, 'eval_bleu': 0.6472, 'eval_chrf': 11.0867, 'eval_gen_len': 21.6419, 'eval_runtime': 119.6669, 'eval_samples_per_second': 8.306, 'eval_steps_per_second': 0.526, 'epoch': 0.45}
+{'loss': 1.1144, 'learning_rate': 1.9503389677302724e-05, 'epoch': 0.5}
+{'loss': 1.093, 'learning_rate': 1.945819397993311e-05, 'epoch': 0.54}
+{'eval_loss': 0.9802261590957642, 'eval_bleu': 0.53, 'eval_chrf': 10.513, 'eval_gen_len': 30.826, 'eval_runtime': 177.7941, 'eval_samples_per_second': 5.591, 'eval_steps_per_second': 0.354, 'epoch': 0.54}
+{'train_runtime': 2055.972, 'train_samples_per_second': 1721.745, 'train_steps_per_second': 107.618, 'train_loss': 2.0444823710123696, 'epoch': 0.54}
