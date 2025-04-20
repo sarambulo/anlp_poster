@@ -1,5 +1,93 @@
 import torch
 from transformers import AutoModelForSeq2SeqLM
+from typing import Literal, Dict
+
+def get_mask_granular(
+    pretrained_model: str = "Helsinki-NLP/opus-mt-es-fi",
+    finetuned_model: str = "americasnlp-lct-ehu/es_fi_quz",
+    K_pct: float = 1.0,
+    part: Literal["all", "encoder", "decoder"] = "all",
+) -> Dict[str, torch.Tensor]:
+    """
+    Compute a binary mask over parameters, selecting the top K_pct parameters
+    by absolute change between the pretrained and finetuned checkpoints.
+
+    If part=="encoder", only consider parameters whose name starts with
+    "model.encoder."; if part=="decoder", only those under "model.decoder."
+    (plus the final lm_head); if "all", consider everything.
+
+    Returns a dict mapping every parameter name to a mask tensor of the same
+    shape (1.0 = update, 0.0 = freeze).
+    """
+
+    # 1. Load both checkpoints
+    model_es_fi   = AutoModelForSeq2SeqLM.from_pretrained(pretrained_model)
+    model_es_quz  = AutoModelForSeq2SeqLM.from_pretrained(finetuned_model)
+
+    # 2. Extract state_dicts
+    state_es_fi   = model_es_fi.state_dict()
+    state_es_quz  = model_es_quz.state_dict()
+
+    # 3. Sanity checks
+    if set(state_es_fi.keys()) != set(state_es_quz.keys()):
+       raise ValueError("Checkpoint key mismatch")
+
+    for k in keys_to_finetune:
+        if state_es_fi[k].shape != state_es_quz[k].shape:
+            raise ValueError(f"Shape mismatch for {k}")
+
+    # 4. Pick keys to finetune
+    if part == "encoder":
+        keys_to_finetune = [k for k in state_es_fi if k.startswith("model.encoder.")]
+    elif part == "decoder":
+        keys_to_finetune = [
+            k for k in state_es_fi
+            if k.startswith("model.decoder.") or k in ("lm_head.weight", "final_logits_bias")
+        ]
+    elif part == "all":
+        keys_to_finetune = list(state_es_fi.keys())
+    else:
+        raise ValueError(f"Invalid part={part!r}, must be 'all','encoder','decoder'")
+
+    # 5. Compute flattened diffs only for chosen keys
+    diffs = {k: (state_es_quz[k] - state_es_fi[k]).abs().view(-1) for k in keys_to_finetune}
+
+    # 6. Select top-K_pct of subset of keys being finetuned
+    all_diffs    = torch.cat(list(diffs.values()))
+    total_params = all_diffs.numel()
+    K            = int(total_params * K_pct)
+    topk_vals, topk_idx = torch.topk(all_diffs, k=K, sorted=False)
+
+    # 7. Build flat mask
+    flat_mask = torch.zeros_like(all_diffs)
+    flat_mask[topk_idx] = 1.0
+
+    # 8. Split back into per-param masks
+    mask_dict_ranked: Dict[str, torch.Tensor] = {}
+    pointer = 0
+    for k, chunk in diffs.items():
+        numel = chunk.numel()
+        mask_dict_ranked[k] = flat_mask[pointer : pointer + numel].view(state_es_fi[k].shape)
+        pointer += numel
+
+    # 9. Build full mask, then override head & layer‑norms
+    full_mask: Dict[str, torch.Tensor] = {}
+    for layer_name, tensor in state_es_fi.items():
+        if layer_name in ("lm_head.weight", "final_logits_bias"):
+            # always fully fine-tune the head (in LT-SFT paper, they fully fine-tune the classifier head)
+            full_mask[layer_name] = torch.ones_like(tensor)
+        elif "layer_norm" in layer_name:
+            # freeze every layer-norm (in LT-SFT paper, they fix the layer norm parameters)
+            full_mask[layer_name] = torch.zeros_like(tensor)
+        elif layer_name in mask_dict_ranked:
+            full_mask[layer_name] = mask_dict_ranked[layer_name].to(tensor.device)
+        else:
+            full_mask[layer_name] = torch.zeros_like(tensor)
+    
+    # TODO: in the LT-SFT paper they also fix the params of the output embedding matrix. Maybe we should do this (analogously)
+
+    return full_mask
+
 
 def get_mask(pretrained_model = "Helsinki-NLP/opus-mt-es-fi", finetuned_model = "americasnlp-lct-ehu/es_fi_quz", K_pct=1):
     # 1a. Load the pre-trained Spanish-Finnish model
