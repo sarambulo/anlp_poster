@@ -15,7 +15,7 @@ def get_argument_parser():
     parser.add_argument("--push_to_hub", default=False, action=argparse.BooleanOptionalAction, help="Whether to push the model to the hub or not (Default: False)")
     parser.add_argument("--lt-sft", default=False, action=argparse.BooleanOptionalAction, help="Whether to use LT-SFT (Default: False)")
     parser.add_argument("--K", type=float, required=False, default=1, help="When using LT-SFT, K=proportion of parameters to leave unmasked (Default: 1)")
-    parser.add_argument("--part", type=str, choices=["all", "encoder", "decoder"], default="all", help="Which part of the model to apply sparse masking: 'all', 'encoder', or 'decoder' (Default: 'all')")
+    parser.add_argument("--part", type=str, required=False, choices=["all", "encoder", "decoder"], default=None, help="(Optional) Which part of the model to apply sparse masking: 'all', 'encoder', or 'decoder'")
 
     return parser
 
@@ -26,11 +26,17 @@ if __name__ == "__main__":
 
     lt_sft_mask = None
     if args.lt_sft:
-        lt_sft_mask = get_mask_granular(
-            pretrained_model=args.checkpoint,
-            K_pct=args.K,
-            part=args.part,
-        )
+        if args.part:
+            print("Using new `get_mask_granular` method")
+            lt_sft_mask = get_mask_granular(
+                pretrained_model=args.checkpoint,
+                K_pct=args.K,
+                part=args.part,
+            )
+        else:
+            print("Using old `get_mask` method")
+            lt_sft_mask = get_mask(K_pct=args.K)
+        
 
     mt_model = MT_Model(
         checkpoint=args.checkpoint,
