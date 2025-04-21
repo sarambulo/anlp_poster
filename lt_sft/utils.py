@@ -28,15 +28,7 @@ def get_mask_granular(
     state_es_fi   = model_es_fi.state_dict()
     state_es_quz  = model_es_quz.state_dict()
 
-    # 3. Sanity checks
-    if set(state_es_fi.keys()) != set(state_es_quz.keys()):
-       raise ValueError("Checkpoint key mismatch")
-
-    for k in keys_to_finetune:
-        if state_es_fi[k].shape != state_es_quz[k].shape:
-            raise ValueError(f"Shape mismatch for {k}")
-
-    # 4. Pick keys to finetune
+    # 3. Pick keys to finetune
     if part == "encoder":
         keys_to_finetune = [k for k in state_es_fi if k.startswith("model.encoder.")]
     elif part == "decoder":
@@ -48,6 +40,14 @@ def get_mask_granular(
         keys_to_finetune = list(state_es_fi.keys())
     else:
         raise ValueError(f"Invalid part={part!r}, must be 'all','encoder','decoder'")
+
+    # 4. Sanity checks
+    if set(state_es_fi.keys()) != set(state_es_quz.keys()):
+       raise ValueError("Checkpoint key mismatch")
+
+    for k in keys_to_finetune:
+        if state_es_fi[k].shape != state_es_quz[k].shape:
+            raise ValueError(f"Shape mismatch for {k}")
 
     # 5. Compute flattened diffs only for chosen keys
     diffs = {k: (state_es_quz[k] - state_es_fi[k]).abs().view(-1) for k in keys_to_finetune}
