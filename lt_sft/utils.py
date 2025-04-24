@@ -1,6 +1,101 @@
 import torch
 from transformers import AutoModelForSeq2SeqLM
-from typing import Literal, Dict
+from typing import Literal, Dict, Sequence
+
+def get_mask_layerwise(
+    pretrained_model: str = "Helsinki-NLP/opus-mt-es-fi",
+    finetuned_model: str = "americasnlp-lct-ehu/es_fi_quz",
+    layer_pct: Dict[str, Sequence[float]] = {
+        "encoder": [1, 1, 1, 1, 1, 1],
+        "decoder": [1, 1, 1, 1, 1, 1]
+    },
+) -> Dict[str, torch.Tensor]:
+    """
+    Build a binary mask dict over parameters, selecting per-layer top-changes
+    according to `layer_pct`.
+
+    layer_pct must be of the form:
+      {
+        "encoder": [p0, p1, ..., p{L_enc-1}],
+        "decoder": [q0, q1, ..., q{L_dec-1}]
+      }
+    where each p_i and q_j is the fraction of THAT
+    layer's parameters to keep (1.0 ⇒ keep all, 0 ⇒ freeze all).
+
+    Note: in our case, L_enc = L_dec = 6
+
+    By default:
+     - lm_head.*                → always kept (mask=1)
+     - any "...layer_norm..."   → always frozen (mask=0)
+     - all other keys           → masked per-layer (or frozen if not in any layer)
+    """
+    # 1) load models & state dicts
+    model_es_fi = AutoModelForSeq2SeqLM.from_pretrained(pretrained_model)
+    model_es_quz  = AutoModelForSeq2SeqLM.from_pretrained(finetuned_model)
+    state_es_fi = model_es_fi.state_dict()
+    state_es_quz = model_es_quz.state_dict()
+    if set(state_es_fi.keys()) != set(state_es_quz.keys()):
+        raise ValueError("Checkpoint key mismatch")
+
+    # 2) helper to gather all diffs for a given prefix list of keys
+    def _collect_diffs(prefix_match):
+        keys = [k for k in state_es_fi if any(k.startswith(pref) for pref in prefix_match)]
+        diffs = {k: (state_es_quz[k] - state_es_fi[k]).abs().view(-1) for k in keys}
+        flat = torch.cat(list(diffs.values()))
+        return diffs, flat, keys
+
+    # 3) build an empty mask space
+    full_mask: Dict[str, torch.Tensor] = {}
+    for name, tensor in state_es_fi.items():
+        full_mask[name] = torch.zeros_like(tensor)
+
+    # 4) always keep head, always freeze any layer_norm
+    for name in state_es_fi:
+        if name in ("lm_head.weight", "final_logits_bias"):
+            full_mask[name] = torch.ones_like(state_es_fi[name])
+        elif "layer_norm" in name:
+            full_mask[name] = torch.zeros_like(state_es_fi[name])
+
+    # 5) encoder layers
+    enc_pcts = layer_pct.get("encoder", [])
+    for i, pct in enumerate(enc_pcts):
+        prefix = [f"model.encoder.layers.{i}."]
+        diffs, flat, keys = _collect_diffs(prefix)
+        K = int(flat.numel() * pct)
+        if K <= 0:
+            continue
+        topk_idx = torch.topk(flat, k=K, sorted=False).indices
+        mask_flat = torch.zeros_like(flat)
+        mask_flat[topk_idx] = 1.0
+
+        # split back
+        ptr = 0
+        for k in keys:
+            n = diffs[k].numel()
+            m = mask_flat[ptr:ptr+n].view(state_es_fi[k].shape)
+            full_mask[k] = m.to(state_es_fi[k].device)
+            ptr += n
+
+    # 6) decoder layers
+    dec_pcts = layer_pct.get("decoder", [])
+    for j, pct in enumerate(dec_pcts):
+        prefix = [f"model.decoder.layers.{j}."]
+        diffs, flat, keys = _collect_diffs(prefix)
+        K = int(flat.numel() * pct)
+        if K <= 0:
+            continue
+        topk_idx = torch.topk(flat, k=K, sorted=False).indices
+        mask_flat = torch.zeros_like(flat)
+        mask_flat[topk_idx] = 1.0
+
+        ptr = 0
+        for k in keys:
+            n = diffs[k].numel()
+            m = mask_flat[ptr:ptr+n].view(state_es_fi[k].shape)
+            full_mask[k] = m.to(state_es_fi[k].device)
+            ptr += n
+
+    return full_mask
 
 def get_mask_granular(
     pretrained_model: str = "Helsinki-NLP/opus-mt-es-fi",
