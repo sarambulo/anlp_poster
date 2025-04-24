@@ -1,6 +1,6 @@
 from src.machine_translation.mt_model import MT_Model
 import argparse
-from lt_sft.utils import get_mask, get_mask_granular
+from lt_sft.utils import get_mask, get_mask_granular, get_mask_layerwise
 
 def get_argument_parser():
     parser = argparse.ArgumentParser()
@@ -16,6 +16,20 @@ def get_argument_parser():
     parser.add_argument("--lt-sft", default=False, action=argparse.BooleanOptionalAction, help="Whether to use LT-SFT (Default: False)")
     parser.add_argument("--K", type=float, required=False, default=1, help="When using LT-SFT, K=proportion of parameters to leave unmasked (Default: 1)")
     parser.add_argument("--part", type=str, required=False, choices=["all", "encoder", "decoder"], default=None, help="(Optional) Which part of the model to apply sparse masking: 'all', 'encoder', or 'decoder'")
+    parser.add_argument(
+        "--encoder",
+        nargs="+",
+        type=float,
+        metavar="P",
+        help="Space-separated list of floats in [0,1]: per-encoder-layer keep-rates"
+    )
+    parser.add_argument(
+        "--decoder",
+        nargs="+",
+        type=float,
+        metavar="Q",
+        help="Space-separated list of floats in [0,1]: per-decoder-layer keep-rates"
+    )
 
     return parser
 
@@ -25,9 +39,28 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     lt_sft_mask = None
-    if args.lt_sft:
+    if args.encoder is not None or args.decoder is not None:
+        if args.encoder:
+            if any(p < 0.0 or p > 1.0 for p in args.encoder):
+                parser.error("--encoder values must all be between 0.0 and 1.0")
+        if args.decoder:
+            if any(q < 0.0 or q > 1.0 for q in args.decoder):
+                parser.error("--decoder values must all be between 0.0 and 1.0")
+
+        print("Using new layerwise `get_mask_layerwise` method")
+        layer_pct = {}
+        if args.encoder is not None:
+            layer_pct["encoder"] = args.encoder
+        if args.decoder is not None:
+            layer_pct["decoder"] = args.decoder
+
+        lt_sft_mask = get_mask_layerwise(
+            pretrained_model=args.checkpoint,
+            layer_pct=layer_pct,
+        )
+    elif args.lt_sft:
         if args.part:
-            print("Using new `get_mask_granular` method")
+            print("Using `get_mask_granular` method")
             lt_sft_mask = get_mask_granular(
                 pretrained_model=args.checkpoint,
                 K_pct=args.K,
